@@ -3,6 +3,9 @@ import cv2
 import os, sys
 import numpy as np
 import math
+import arduino
+import threading
+
 
 def face_confidence(face_distance, face_match_threshold=0.6):
     range = (1.0 - face_match_threshold)
@@ -20,12 +23,18 @@ class FaceRecognition:
     known_face_encodings = []
     known_face_names = []
     process_current_frame = True
+    recognition_counter = 0
+    recognition_threshold = 30  # Adjust this value based on your frame rate and the desired time delay
+
     
     def __init__(self):
         self.encode_faces()
         
     def encode_faces(self):
         for file in os.listdir("faces"):
+            if file[0] == '.':
+                continue
+            print(f'Encoding {file}')
             face_image = face_recognition.load_image_file(f'faces/{file}')
             face_encoding = face_recognition.face_encodings(face_image)[0]
             self.known_face_names.append(file)
@@ -56,7 +65,18 @@ class FaceRecognition:
                     if matches[best_match_index]:
                         name = self.known_face_names[best_match_index]
                         confidence = face_confidence(face_distances[best_match_index])
+                        self.recognition_counter += 1
+                        if self.recognition_counter >= self.recognition_threshold:
+                            self.recognition_counter = 0
+                            print(f'{name}({confidence})')
+                            thread = threading.Thread(target=arduino.mandaNome, args=(name,))
+                            thread.start()
+                    else:
+                        self.recognition_counter = 0
+                        thread = threading.Thread(target=arduino.mandaNome, args=("Nenhuma",))
+                        thread.start()
                     self.face_names.append(f'{name}({confidence})')
+                    
             self.process_current_frame = not self.process_current_frame
             for (top,right, bottom, left), name in zip(self.face_locations,self.face_names):
                 top *= 4
