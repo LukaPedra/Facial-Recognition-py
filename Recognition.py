@@ -5,6 +5,8 @@ import numpy as np
 import math
 import aux
 import threading
+from serial import Serial
+from time import sleep
 
 achou = False
 
@@ -16,7 +18,13 @@ def face_confidence(face_distance, face_match_threshold=0.75):
     else:
         value = (linear_val + ((1.0 - linear_val) * math.pow((linear_val - 0.5) * 2, 0.2))) * 100
         return str(round(value, 2)) + "%"
-
+def SendSerial(Text):
+	meu_serial = Serial('/dev/cu.usbmodem11101', 9600)
+	sleep(2)
+	Text = Text + "\n"
+	meu_serial.write(Text.encode("UTF-8"))
+	print(Text)
+	return  
 class FaceRecognition:
     face_locations = []
     face_encodings = []
@@ -40,12 +48,15 @@ class FaceRecognition:
             face_encoding = face_recognition.face_encodings(face_image)[0]
             self.known_face_names.append(file)
             self.known_face_encodings.append(face_encoding)
-        print(self.known_face_names)  
+        print(self.known_face_names) 
+    
     def run_recognition(self):
+        global achou
         videocapture = cv2.VideoCapture(1)
+        SendSerial("Procurando Rosto")
         if not videocapture.isOpened():
             sys.exit('Video source not found')
-        while True:
+        while achou == False:
             ret, frame = videocapture.read()
             if self.process_current_frame:
                 small_frame = cv2.resize(frame,(0,0),fx=0.25,fy=0.25)
@@ -71,12 +82,12 @@ class FaceRecognition:
                             self.recognition_counter = 0
                             print(f'{name}({confidence})')
                             achou = True
-                            aux.mandaNomeArduino(name)
+                            SendSerial("Rosto Encontrado")
                             break
                     else:
+                        SendSerial("Rosto desconhecido")
+                        
                         self.recognition_counter = 0
-                        thread = threading.Thread(target=aux.mandaNomeArduino, args=("Nenhuma",))
-                        thread.start()
                     self.face_names.append(f'{name}({confidence})')
                     
             self.process_current_frame = not self.process_current_frame
@@ -99,3 +110,4 @@ def runFacialRecognition():
 	fr = FaceRecognition()
 	fr.run_recognition()
 	return achou
+runFacialRecognition()
