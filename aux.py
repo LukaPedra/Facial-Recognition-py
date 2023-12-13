@@ -3,7 +3,7 @@ from time import sleep
 
 
 
-def mandaNome(nome):
+def mandaNomeArduino(nome):
 	nome = nome.split('.')[0]
 	meu_serial = Serial('/dev/cu.usbmodem11101', 9600)
 	sleep(2)
