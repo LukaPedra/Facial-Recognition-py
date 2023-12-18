@@ -7,6 +7,7 @@ import aux
 from threading import Thread
 from serial import Serial
 from time import sleep
+from datetime import datetime
 
 
 
@@ -24,7 +25,7 @@ def face_confidence(face_distance, face_match_threshold=0.75):
 
   
 class FaceRecognition:
-	achou = None
+	achou = False
 	buscaCara = False
 	face_locations = []
 	face_encodings = []
@@ -51,13 +52,17 @@ class FaceRecognition:
 		print(self.known_face_names) 
 	def get_achou(self):
 		return self.achou
-	def run_recognition(self):
+	def find_face(self):
+		self.buscaCara = True
+		self.achou = False
+	def run_recognition(self, nome):
 		videocapture = cv2.VideoCapture(1)
 		if not videocapture.isOpened():
 			sys.exit('Video source not found')
 		while True:
 			ret, frame = videocapture.read()
 			if self.buscaCara == True:
+				inicio = datetime.now()
 				if self.process_current_frame:
 					small_frame = cv2.resize(frame,(0,0),fx=0.25,fy=0.25)
 					rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
@@ -79,15 +84,16 @@ class FaceRecognition:
 							confidence = face_confidence(face_distances[best_match_index])
 							self.recognition_counter += 1
 							if self.recognition_counter >= self.recognition_threshold:
+								if name == nome:
+									self.achou = True
+									self.buscaCara = False
+									break
 								self.recognition_counter = 0
-								achou = name
-								self.buscaCara = False
+								
 						else:
 							self.recognition_counter += 1
 							if self.recognition_counter >= self.recognition_threshold:
 								self.recognition_counter = 0
-								achou = 'Desconhecido'	
-								self.buscaCara = False
 						self.face_names.append(f'{name}({confidence})')
 						
 				self.process_current_frame = not self.process_current_frame
@@ -100,6 +106,10 @@ class FaceRecognition:
 					cv2.rectangle(frame,(left,top),(right,bottom), (0,0,255),2)
 					cv2.rectangle(frame,(left,bottom - 35),(right,bottom), (0,0,255),-1)
 					cv2.putText(frame,name,(left + 6, bottom - 6),cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1)
+				if datetime.now() - inicio > 10:
+					self.buscaCara = False
+					self.achou = False
+
 			cv2.imshow('Face recognition',frame)
 			if cv2.waitKey(1) == ord('q'):
 				break
