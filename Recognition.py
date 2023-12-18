@@ -25,6 +25,7 @@ def face_confidence(face_distance, face_match_threshold=0.75):
 
   
 class FaceRecognition:
+	nome = ""
 	achou = False
 	buscaCara = False
 	face_locations = []
@@ -52,10 +53,11 @@ class FaceRecognition:
 		print(self.known_face_names) 
 	def get_achou(self):
 		return self.achou
-	def find_face(self):
+	def find_face(self,nome):
+		self.nome = nome
 		self.buscaCara = True
 		self.achou = False
-	def run_recognition(self, nome):
+	def run_recognition(self):
 		videocapture = cv2.VideoCapture(1)
 		if not videocapture.isOpened():
 			sys.exit('Video source not found')
@@ -84,7 +86,7 @@ class FaceRecognition:
 							confidence = face_confidence(face_distances[best_match_index])
 							self.recognition_counter += 1
 							if self.recognition_counter >= self.recognition_threshold:
-								if name == nome:
+								if name == self.nome:
 									self.achou = True
 									self.buscaCara = False
 									break
