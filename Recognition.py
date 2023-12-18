@@ -49,7 +49,8 @@ class FaceRecognition:
 			self.known_face_names.append(file)
 			self.known_face_encodings.append(face_encoding)
 		print(self.known_face_names) 
-	
+	def get_achou(self):
+		return self.achou
 	def run_recognition(self):
 		videocapture = cv2.VideoCapture(1)
 		if not videocapture.isOpened():
