@@ -3,7 +3,6 @@ import cv2
 import os, sys
 import numpy as np
 import math
-import aux
 from threading import Thread
 from serial import Serial
 from time import sleep
@@ -26,12 +25,13 @@ def face_confidence(face_distance, face_match_threshold=0.75):
   
 class FaceRecognition:
 	nome = ""
-	achou = False
+	achou = None
 	buscaCara = False
 	face_locations = []
 	face_encodings = []
 	face_names = []
 	known_face_encodings = []
+	inicio = None
 	known_face_names = []
 	process_current_frame = True
 	recognition_counter = 0
@@ -56,7 +56,8 @@ class FaceRecognition:
 	def find_face(self,nome):
 		self.nome = nome
 		self.buscaCara = True
-		self.achou = False
+		self.achou = None
+		self.inicio = datetime.now()
 	def run_recognition(self):
 		videocapture = cv2.VideoCapture(1)
 		if not videocapture.isOpened():
@@ -64,7 +65,7 @@ class FaceRecognition:
 		while True:
 			ret, frame = videocapture.read()
 			if self.buscaCara == True:
-				inicio = datetime.now()
+				
 				if self.process_current_frame:
 					small_frame = cv2.resize(frame,(0,0),fx=0.25,fy=0.25)
 					rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
@@ -87,9 +88,10 @@ class FaceRecognition:
 							self.recognition_counter += 1
 							if self.recognition_counter >= self.recognition_threshold:
 								if name == self.nome:
+            
 									self.achou = True
 									self.buscaCara = False
-									break
+								self.buscaCara = False
 								self.recognition_counter = 0
 								
 						else:
@@ -108,7 +110,8 @@ class FaceRecognition:
 					cv2.rectangle(frame,(left,top),(right,bottom), (0,0,255),2)
 					cv2.rectangle(frame,(left,bottom - 35),(right,bottom), (0,0,255),-1)
 					cv2.putText(frame,name,(left + 6, bottom - 6),cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),1)
-				if datetime.now() - inicio > 10:
+				aux = datetime.now() - self.inicio
+				if aux.total_seconds() > 10:
 					self.buscaCara = False
 					self.achou = False
 
